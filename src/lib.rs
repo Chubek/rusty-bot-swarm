@@ -2,14 +2,15 @@
 extern crate lazy_static;
 
 mod automator;
+mod config;
 mod cookie;
-mod utils;
 mod search;
+mod utils;
 
 #[cfg(test)]
 mod tests {
-    use crate::{cookie, automator};
     use crate::utils::write_to_file;
+    use crate::{automator, cookie};
     use std::default::Default;
     use std::fs::remove_file;
 

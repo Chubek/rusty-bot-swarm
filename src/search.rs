@@ -1,9 +1,7 @@
-
-
-use thirtyfour::{error::WebDriverResult, WebDriver};
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use std::collections::HashMap;
+use thirtyfour::{error::WebDriverResult, WebDriver};
 
 lazy_static! {
     static ref URL_ENC_MAP: HashMap<&'static str, &'static str> = {
@@ -13,24 +11,8 @@ lazy_static! {
         m.insert(":", "%3A");
         m.insert("#", "%23");
         m.insert("@", "%40");
-
         m
     };
-
-    static ref URL_TEMP: &'static str = "https://twitter.com/search?lang=en&q={final_assembly}&src=typed_query";
-    static ref ALL_WORD_TEMP: &'static str = "{all_word}";
-    static ref EXACT_WORD_TEMP: &'static str = "\"{exact_phrase}\"";
-    static ref ANY_WORD_TEMP: &'static str = "({any_word})";
-    static ref NONE_WORD_TEMP: &'static str = "{none_word}";
-    static ref HASHTAGS_TEMP: &'static str = "({hashtags})";
-    static ref FROM_USERS: &'static str = "({from_user})";
-    static ref TO_USERS: &'static str = "({to_users})";
-    static ref MENTION_USERS: &'static str = "({mention_users})";
-    static ref MIN_REPLIES: &'static str = "min_replies:{min_replies}";
-    static ref MIN_FAVS: &'static str = "min_faves:{min_favs}";
-    static ref MIN_RETWEETS: &'static str = "min_retweets:{min_rts}";
-    static ref LANG: &'static str = "lang:{lang}";
-    static ref UNTIL: &'static str = "until:{until}";
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
@@ -48,7 +30,7 @@ pub struct Search<'a> {
     minimum_likes: Option<u32>,
     minimum_retweets: Option<u32>,
     date_from: Option<&'a str>,
-    date_to: Option<&'a str>, 
+    date_to: Option<&'a str>,
 }
 
 impl<'a> Search<'a> {
@@ -58,7 +40,7 @@ impl<'a> Search<'a> {
         search
     }
 
-    fn format_text(&self) -> String {
+    pub fn format_text(self) -> String {
         let mut search_params = Vec::<String>::new();
 
         if let Some(all_word_vec) = self.clone().all_words {
@@ -78,7 +60,7 @@ impl<'a> Search<'a> {
             let any_words_joined = any_words.join("+OR+");
             let any_words_para = format!("({})", any_words_joined);
 
-            search_params.push( any_words_para);
+            search_params.push(any_words_para);
         }
 
         if let Some(none_words) = self.clone().none_words {
@@ -97,11 +79,11 @@ impl<'a> Search<'a> {
 
         if let Some(from_accounts) = self.clone().from_accounts {
             let from_accounts_words_joined = from_accounts
-                                                        .iter()
-                                                        .map(|x| format!("from:{}",x))
-                                                        .collect::<Vec<String>>()
-                                                        .join("+OR+");
-            
+                .iter()
+                .map(|x| format!("from:{}", x))
+                .collect::<Vec<String>>()
+                .join("+OR+");
+
             let from_accounts_words_para = format!("({})", from_accounts_words_joined);
 
             search_params.push(from_accounts_words_para);
@@ -109,16 +91,16 @@ impl<'a> Search<'a> {
 
         if let Some(to_accounts) = self.clone().from_accounts {
             let to_accounts_words_joined = to_accounts
-                                                        .iter()
-                                                        .map(|x| format!("to:{}",x))
-                                                        .collect::<Vec<String>>()
-                                                        .join("+OR+");
-            
+                .iter()
+                .map(|x| format!("to:{}", x))
+                .collect::<Vec<String>>()
+                .join("+OR+");
+
             let to_accounts_words_para = format!("({})", to_accounts_words_joined);
 
             search_params.push(to_accounts_words_para);
         }
-        
+
         if let Some(mention_accounts) = self.clone().none_words {
             let mention_accounts_words_joined = mention_accounts.join("+OR+");
             let mention_accounts_words_para = format!("({})", mention_accounts_words_joined);
@@ -168,7 +150,11 @@ impl<'a> Search<'a> {
             params_joined = params_joined.replace(key, value);
         }
 
+        params_joined = format!(
+            "https://twitter.com/search?lang=en&q={}&src=typed_query",
+            params_joined
+        );
+
         params_joined
-        
     }
 }

@@ -18,10 +18,10 @@ pub async fn automator() -> WebDriverResult<()> {
          "/home/chubak/BotSwarmTwitter/PY/twitter.com.cookies.json", 
          &driver).await?;
 
-     driver.get("https://twitter.com/search-advanced?lang=en").await?;
+     driver.get("https://twitter.com").await?;
 
-     sleep(Duration::from_millis(8000)).await;
-
+     sleep(Duration::from_millis(12000)).await;
+/* 
      driver.execute_script("window.scrollTo(0, document.body.scrollHeight);").await?;
      sleep(Duration::from_millis(100)).await;
      driver.execute_script("window.scrollTo(0, document.body.scrollHeight);").await?;
@@ -72,10 +72,28 @@ pub async fn automator() -> WebDriverResult<()> {
      write_to_file("./links", joined).unwrap();
 
      
+*/
 
+     let elem_upload = driver.find_element(
+          By::XPath("//*[@data-testid = \"fileInput\"]")).await?;
+     sleep(Duration::from_millis(8000)).await;
 
-
+     elem_upload.send_keys("/home/chubak/Pictures/photo_2022-04-20_18-57-34.jpg").await?;
      
+     sleep(Duration::from_millis(12000)).await;
+
+     let elem_ta = driver.find_element(
+          By::XPath("//*[@data-testid = \"tweetTextarea_0\"]")).await?;
+     
+     elem_ta.send_keys("My new #kitty we got four!").await?;
+
+     let elem_btn = driver.find_element(
+          By::XPath("//*[@data-testid = \"tweetButtonInline\"]")).await?;
+     
+     sleep(Duration::from_millis(8000)).await;
+
+     elem_btn.click().await?;
+
      // let elem = driver.find_element(
        //   By::XPath("//*[@data-testid = \"tweetTextarea_0\"]")).await?;
      

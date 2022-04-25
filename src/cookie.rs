@@ -1,8 +1,8 @@
-use crate::utils::{read_from_file, convert_timestamp};
+use crate::utils::{convert_timestamp, read_from_file};
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use std::{default::Default, str::FromStr};
-use thirtyfour::common::cookie::{Cookie as TFCookie};
+use thirtyfour::common::cookie::Cookie as TFCookie;
 use thirtyfour::{error::WebDriverResult, WebDriver};
 
 #[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
@@ -32,24 +32,22 @@ impl Cookie {
     }
 
     fn convert_cookie(self) -> TFCookie {
-        let mut tf_cookie: TFCookie = TFCookie::new(
-                    self.name.as_str(), 
-                    serde_json::json!(self.value.as_str()));
+        let mut tf_cookie: TFCookie =
+            TFCookie::new(self.name.as_str(), serde_json::json!(self.value.as_str()));
 
         if let Some(_) = self.domain {
             tf_cookie.set_domain(self.domain);
         }
 
-         if let Some(_) = self.path {
+        if let Some(_) = self.path {
             tf_cookie.set_path(self.path);
         }
-        
+
         if let Some(_) = self.secure {
             tf_cookie.set_secure(self.secure);
         }
 
         tf_cookie
-
     }
 
     async fn add_all_cookies(wd: &WebDriver, cookies: Vec<Self>) -> WebDriverResult<()> {
@@ -61,7 +59,7 @@ impl Cookie {
 
         Ok(())
     }
-    
+
     pub async fn load_from_str_and_add(str: &str, wd: &WebDriver) -> WebDriverResult<()> {
         let cookies = Self::from_string(str);
 
@@ -77,6 +75,4 @@ impl Cookie {
 
         Ok(())
     }
-
-
 }
