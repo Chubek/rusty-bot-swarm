@@ -10,3 +10,7 @@ thirtyfour = "0.28.3"
 tokio = { version = "1", features = ["full"] }
 serde_json = "1.0.59"
 serde = { version = "1.0", features = ["derive"] }
+chrono = "*"
+substring = "*"
+futures = "0.3"
+lazy_static = "1"

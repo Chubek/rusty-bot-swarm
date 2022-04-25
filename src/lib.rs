@@ -1,10 +1,14 @@
+#[macro_use]
+extern crate lazy_static;
+
 mod automator;
 mod cookie;
 mod utils;
+mod search;
 
 #[cfg(test)]
 mod tests {
-    use crate::cookie;
+    use crate::{cookie, automator};
     use crate::utils::write_to_file;
     use std::default::Default;
     use std::fs::remove_file;
@@ -85,5 +89,10 @@ mod tests {
         assert_eq!(is_and_is, should_be);
 
         remove_file("./temp.json").unwrap();
+    }
+
+    #[test]
+    fn test_run() {
+        automator::automator().unwrap();
     }
 }
