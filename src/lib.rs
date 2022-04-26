@@ -6,6 +6,7 @@ mod config;
 mod cookie;
 mod search;
 mod utils;
+mod action;
 
 #[cfg(test)]
 mod tests {

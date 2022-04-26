@@ -1,16 +1,17 @@
+use crate::config::Behavior;
+use crate::cookie::Cookie;
 use crate::search::Search;
+use futures::executor::block_on;
+use std::path::Path;
 use thirtyfour::prelude::*;
 use tokio;
-use crate::cookie::Cookie;
-use std::path::Path;
-use futures::executor::block_on;
 use tokio::time::{sleep, Duration};
 
-pub enum Action {
+pub enum Action<'a> {
     PostText(String),
     PostImage(ImagePost),
     LikePost(String),
-    SearchTwitter(Search),
+    SearchTwitter(Search<'a>),
     Retweet(String),
     QuoteRetweet(RtQuote),
     CommentText(TextComment),
@@ -38,12 +39,36 @@ pub struct ImageComment {
     text: Option<String>,
 }
 
-
-impl Action {
-    pub async fn call(&self) -> WebDriverResult<()>  {
+impl<'a> Action<'a> {
+    pub async fn call(&self, driver: &WebDriver, behavior: Behavior) -> WebDriverResult<()> {
+        Ok(())
     }
 
-    pub async fn post_text(&self, wd: WebDriver, ) -> WebDriverResult<()>  {
+    pub async fn post_text(
+        &self,
+        driver: &WebDriver,
+        text: String,
+        behavior: Behavior,
+    ) -> WebDriverResult<()> {
+        let elem_ta = driver
+            .find_element(By::XPath("//*[@data-testid = \"tweetTextarea_0\"]"))
+            .await?;
 
+        let chars = text.chars();
+
+        for char in chars {
+            elem_ta.send_keys(char).await?;
+            sleep(Duration::from_millis(100)).await;
+        }
+
+        sleep(Duration::from_millis(behavior.run_erratic_wait().into())).await;
+
+        let elem_btn = driver
+            .find_element(By::XPath("//*[@data-testid = \"tweetButtonInline\"]"))
+            .await?;
+
+        elem_btn.click().await?;
+
+        Ok(())
     }
 }
