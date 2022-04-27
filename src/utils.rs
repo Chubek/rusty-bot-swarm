@@ -25,6 +25,6 @@ pub fn convert_timestamp(timestamp: i64) -> DateTime<Utc> {
     datetime
 }
 
-pub fn rand_num_betwee_oen_and_three() -> u8 {
-    rand::thread_rng().gen_range(0..4)
+pub fn rand_num_wait() -> u8 {
+    rand::thread_rng().gen_range(120..300)
 }

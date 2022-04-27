@@ -16,31 +16,31 @@ lazy_static! {
 }
 
 #[derive(Clone, Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
-pub struct Search<'a> {
-    all_words: Option<Vec<&'a str>>,
-    exact_phrase: Option<Vec<&'a str>>,
-    any_words: Option<Vec<&'a str>>,
-    none_words: Option<Vec<&'a str>>,
-    hashtags: Option<Vec<&'a str>>,
-    language: Option<&'a str>,
-    from_accounts: Option<Vec<&'a str>>,
-    to_these_accounts: Option<Vec<&'a str>>,
-    mentioning_accounts: Option<Vec<&'a str>>,
+pub struct Search {
+    all_words: Option<Vec<String>>,
+    exact_phrase: Option<Vec<String>>,
+    any_words: Option<Vec<String>>,
+    none_words: Option<Vec<String>>,
+    hashtags: Option<Vec<String>>,
+    language: Option<String>,
+    from_accounts: Option<Vec<String>>,
+    to_these_accounts: Option<Vec<String>>,
+    mentioning_accounts: Option<Vec<String>>,
     minimum_replies: Option<u32>,
     minimum_likes: Option<u32>,
     minimum_retweets: Option<u32>,
-    date_from: Option<&'a str>,
-    date_to: Option<&'a str>,
+    date_from: Option<String>,
+    date_to: Option<String>,
 }
 
-impl<'a> Search<'a> {
-    pub fn from_json_string(json_str: &'a str) -> Self {
-        let search: Search = from_str(json_str).unwrap();
+impl Search {
+    pub fn from_json_string(json_str: String) -> Self {
+        let search: Search = from_str(json_str.as_str()).unwrap();
 
         search
     }
 
-    pub fn format_text(self) -> String {
+    pub fn format_url(self) -> String {
         let mut search_params = Vec::<String>::new();
 
         if let Some(all_word_vec) = self.clone().all_words {
