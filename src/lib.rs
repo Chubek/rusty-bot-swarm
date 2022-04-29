@@ -7,6 +7,7 @@ mod cookie;
 mod search;
 mod utils;
 mod action;
+mod proxy;
 
 #[cfg(test)]
 mod tests {

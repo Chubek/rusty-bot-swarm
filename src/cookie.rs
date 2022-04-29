@@ -5,7 +5,7 @@ use std::{default::Default, str::FromStr};
 use thirtyfour::common::cookie::Cookie as TFCookie;
 use thirtyfour::{error::WebDriverResult, WebDriver};
 
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Deserialize, Default, Debug, PartialEq, Eq)]
 pub struct Cookie {
     pub name: String,
     pub value: String,
