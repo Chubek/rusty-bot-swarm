@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::utils::write_strings_to_zip;
 use serde::Serialize;
 use thirtyfour::{prelude::*, ChromeCapabilities};
@@ -5,6 +6,7 @@ use thirtyfour::support::block_on;
 use thirtyfour::{ExtensionCommand, RequestMethod};
 use zip::write;
 use std::path::Path;
+
 
 lazy_static! {
     static ref MANIFEST: String = String::from(
@@ -91,11 +93,8 @@ impl Proxy {
         .unwrap()
     }
 
-    pub async fn launch_driver_with_proxy(host: String, 
-        username: String, 
-        password: String,
-        selenium_url: String) -> WebDriverResult<WebDriver> {
-            let proxy = Self::new(host, username, password);
+    pub async fn launch_driver_with_proxy(&self, config: Config) -> WebDriverResult<WebDriver> {
+            let proxy = Self::new(self.host.clone(), self.username.clone(), self.password.clone());
 
             let mut caps = ChromeCapabilities::new();
 
@@ -107,7 +106,9 @@ impl Proxy {
             
             caps.add_extension(extension_path)?;
 
-            let driver = WebDriver::new(&selenium_url, caps).await?;
+            let driver = WebDriver::new(&config.selenium_url, caps).await?;
+
+            config.apply_config(&driver).await?;
 
             std::fs::remove_file(ext_str).unwrap();
 

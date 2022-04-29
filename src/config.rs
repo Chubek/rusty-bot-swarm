@@ -1,4 +1,5 @@
 use crate::cookie::Cookie;
+use futures::Stream;
 use rand::{self, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
@@ -6,14 +7,14 @@ use std::default::Default;
 use std::iter::Product;
 use thirtyfour::{error::WebDriverResult, WebDriver};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub enum Erracy {
     SuperErratic,
     Erratic,
     Normal,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct Behavior {
     erratic_scroll: Erracy,
     erratic_wait: Erracy,
@@ -115,10 +116,11 @@ impl Behavior {
         Ok(())
     }
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct Config {
-    cookies: Vec<Cookie>,
-    behavior: Behavior,
+    pub cookies: Vec<Cookie>,
+    pub behavior: Behavior,
+    pub selenium_url: String,
 }
 
 impl Config {
@@ -126,5 +128,14 @@ impl Config {
         let config: Config = from_str(s).unwrap();
 
         config
+    }
+
+    pub async fn apply_config(&self, driver: &WebDriver) -> WebDriverResult<()> {
+        self.behavior.run_erratic_reload(&driver).await?;
+        self.behavior.run_erratic_scroll(&driver).await?;
+        Cookie::add_all_cookies(&driver, self.cookies.clone()).await?;
+
+
+        Ok(())
     }
 }

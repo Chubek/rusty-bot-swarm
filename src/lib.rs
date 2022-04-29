@@ -8,6 +8,8 @@ mod search;
 mod utils;
 mod action;
 mod proxy;
+mod bot;
+mod cronueue;
 
 #[cfg(test)]
 mod tests {

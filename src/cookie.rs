@@ -50,7 +50,7 @@ impl Cookie {
         tf_cookie
     }
 
-    async fn add_all_cookies(wd: &WebDriver, cookies: Vec<Self>) -> WebDriverResult<()> {
+    pub async fn add_all_cookies(wd: &WebDriver, cookies: Vec<Self>) -> WebDriverResult<()> {
         for cookie in cookies {
             let tf_cookie: TFCookie = cookie.convert_cookie();
 

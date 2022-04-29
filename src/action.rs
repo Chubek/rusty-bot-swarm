@@ -59,7 +59,7 @@ pub struct RtQuotePost {
 }
 
 impl Action {
-    pub async fn call(self, driver: &WebDriver, behavior: Behavior) -> WebDriverResult<()> {
+    pub async fn call(self, driver: &WebDriver, behavior: &Behavior) -> WebDriverResult<()> {
         match self.clone() {
             Action::PostText(text) => {
                 self.post_text(driver, text, behavior).await?
@@ -95,7 +95,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         text: String,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<()> {
         let elem_ta = driver
             .find_element(By::XPath("//*[@data-testid = \"tweetTextarea_0\"]"))
@@ -123,7 +123,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         object: ImagePost,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<()> {
         let elem_input = driver
             .find_element(By::XPath("//input[@data-testid = \"fileInput\"]"))
@@ -160,7 +160,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         object: PostRetweetLike,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<()> {
         driver.get(object.url).await?;
 
@@ -205,7 +205,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         object: RtQuotePost,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<()> {
         driver.get(object.url).await?;
 
@@ -271,7 +271,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         object: PostRetweetLike,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<()> {
         driver.get(object.url).await?;
 
@@ -308,7 +308,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         object: TextComment,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<()> {
         driver.get(object.url).await?;
 
@@ -340,7 +340,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         object: ImageComment,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<()> {
         driver.get(object.url).await?;
 
@@ -381,7 +381,7 @@ impl Action {
         &self,
         driver: &WebDriver,
         object: Search,
-        behavior: Behavior,
+        behavior: &Behavior,
     ) -> WebDriverResult<Vec<String>> {
         let url = object.format_url();
 
