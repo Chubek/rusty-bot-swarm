@@ -135,7 +135,6 @@ impl Config {
         self.behavior.run_erratic_scroll(&driver).await?;
         Cookie::add_all_cookies(&driver, self.cookies.clone()).await?;
 
-
         Ok(())
     }
 }

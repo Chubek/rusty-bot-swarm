@@ -1,12 +1,11 @@
 use crate::config::Config;
 use crate::utils::write_strings_to_zip;
 use serde::Serialize;
-use thirtyfour::{prelude::*, ChromeCapabilities};
+use std::path::Path;
 use thirtyfour::support::block_on;
+use thirtyfour::{prelude::*, ChromeCapabilities};
 use thirtyfour::{ExtensionCommand, RequestMethod};
 use zip::write;
-use std::path::Path;
-
 
 lazy_static! {
     static ref MANIFEST: String = String::from(
@@ -31,8 +30,9 @@ lazy_static! {
         }    
     "#
     );
-
-    static ref USER_AGENT: String = String::from("Mozilla/5.0 (Linux; Android 4.4.2; X325–Locked to Life Wireless Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36 TwitterAndroid");
+    static ref USER_AGENT: String = String::from(
+        "Mozilla/5.0 (Linux; Android 4.4.2; X325–Locked to Life Wireless Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36 TwitterAndroid"
+    );
 }
 
 pub struct Proxy {
@@ -94,26 +94,28 @@ impl Proxy {
     }
 
     pub async fn launch_driver_with_proxy(&self, config: Config) -> WebDriverResult<WebDriver> {
-            let proxy = Self::new(self.host.clone(), self.username.clone(), self.password.clone());
+        let proxy = Self::new(
+            self.host.clone(),
+            self.username.clone(),
+            self.password.clone(),
+        );
 
-            let mut caps = ChromeCapabilities::new();
+        let mut caps = ChromeCapabilities::new();
 
-            caps.add_chrome_option("user-agent", USER_AGENT.clone())?;
+        caps.add_chrome_option("user-agent", USER_AGENT.clone())?;
 
-            proxy.create_ext();
-            let ext_str = format!("{}-{}.crx", proxy.host, proxy.username);
-            let extension_path = Path::new(&ext_str);
-            
-            caps.add_extension(extension_path)?;
+        proxy.create_ext();
+        let ext_str = format!("{}-{}.crx", proxy.host, proxy.username);
+        let extension_path = Path::new(&ext_str);
 
-            let driver = WebDriver::new(&config.selenium_url, caps).await?;
+        caps.add_extension(extension_path)?;
 
-            config.apply_config(&driver).await?;
+        let driver = WebDriver::new(&config.selenium_url, caps).await?;
 
-            std::fs::remove_file(ext_str).unwrap();
+        config.apply_config(&driver).await?;
 
-            Ok(driver)
+        std::fs::remove_file(ext_str).unwrap();
 
-
-        }
+        Ok(driver)
+    }
 }

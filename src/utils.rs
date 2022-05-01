@@ -31,7 +31,11 @@ pub fn rand_num_wait() -> u8 {
     rand::thread_rng().gen_range(120..255)
 }
 
-pub fn write_strings_to_zip(filename: String, background: String, manifest: String) -> zip::result::ZipResult<()> {
+pub fn write_strings_to_zip(
+    filename: String,
+    background: String,
+    manifest: String,
+) -> zip::result::ZipResult<()> {
     let path = std::path::Path::new(filename.as_str());
     let file = std::fs::File::create(&path).unwrap();
 
@@ -41,12 +45,11 @@ pub fn write_strings_to_zip(filename: String, background: String, manifest: Stri
         .compression_method(zip::CompressionMethod::Stored)
         .unix_permissions(0o755);
 
-    
     zip.start_file(format!("background.js"), options)?;
-    zip.write_all(background.as_bytes())?;    
-    
+    zip.write_all(background.as_bytes())?;
+
     zip.start_file(format!("manifest.json"), options)?;
     zip.write_all(manifest.as_bytes())?;
 
-    Ok(())    
+    Ok(())
 }

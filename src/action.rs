@@ -3,11 +3,11 @@ use crate::cookie::Cookie;
 use crate::search::Search;
 use crate::utils::rand_num_wait;
 use futures::executor::block_on;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 use thirtyfour::prelude::*;
 use tokio;
 use tokio::time::{sleep, Duration};
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub enum PostNumber {
@@ -61,33 +61,26 @@ pub struct RtQuotePost {
 impl Action {
     pub async fn call(self, driver: &WebDriver, behavior: &Behavior) -> WebDriverResult<()> {
         match self.clone() {
-            Action::PostText(text) => {
-                self.post_text(driver, text, behavior).await?
-            },
+            Action::PostText(text) => self.post_text(driver, text, behavior).await?,
             Action::PostImage(object) => {
                 self.post_image(driver, object, behavior).await?;
-            },
-            Action::LikePost(object) => {
-                self.like_post(driver, object, behavior).await?
-            },
-            Action::Retweet(object) => {
-                self.retweet_post(driver, object, behavior).await?
-            },
+            }
+            Action::LikePost(object) => self.like_post(driver, object, behavior).await?,
+            Action::Retweet(object) => self.retweet_post(driver, object, behavior).await?,
             Action::QuoteRetweet(object) => {
                 self.quote_retweet_post(driver, object, behavior).await?;
-            },
+            }
             Action::CommentText(object) => {
                 self.comment_text(driver, object, behavior).await?;
-            },
+            }
             Action::CommentImage(object) => {
                 self.comment_image(driver, object, behavior).await?;
-            },
+            }
             Action::SearchTwitter(object) => {
                 self.search_site(driver, object, behavior).await?;
             }
         }
-        
-        
+
         Ok(())
     }
 
