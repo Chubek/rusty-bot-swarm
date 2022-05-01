@@ -1,11 +1,11 @@
-use crate::utils::{convert_timestamp, read_from_file};
+use crate::utils::read_from_file;
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
-use std::{default::Default, str::FromStr};
 use thirtyfour::common::cookie::Cookie as TFCookie;
 use thirtyfour::{error::WebDriverResult, WebDriver};
 
 #[derive(Serialize, Clone, Deserialize, Default, Debug, PartialEq, Eq)]
+#[allow(non_snake_case)]
 pub struct Cookie {
     pub name: String,
     pub value: String,

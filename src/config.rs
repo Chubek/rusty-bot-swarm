@@ -1,10 +1,7 @@
 use crate::cookie::Cookie;
-use futures::Stream;
 use rand::{self, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
-use std::default::Default;
-use std::iter::Product;
 use thirtyfour::{error::WebDriverResult, WebDriver};
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]

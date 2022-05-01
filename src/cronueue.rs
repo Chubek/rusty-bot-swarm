@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    action::{self, Action},
+    action::Action,
     config::Behavior,
 };
 use chrono::prelude::*;

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use std::collections::HashMap;
-use thirtyfour::{error::WebDriverResult, WebDriver};
 
 lazy_static! {
     static ref URL_ENC_MAP: HashMap<&'static str, &'static str> = {

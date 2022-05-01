@@ -1,10 +1,7 @@
 use crate::config::Behavior;
-use crate::cookie::Cookie;
 use crate::search::Search;
 use crate::utils::rand_num_wait;
-use futures::executor::block_on;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 use thirtyfour::prelude::*;
 use tokio;
 use tokio::time::{sleep, Duration};

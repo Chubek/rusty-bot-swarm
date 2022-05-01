@@ -1,7 +1,8 @@
+#![allow(dead_code)]
+
 #[macro_use]
 extern crate lazy_static;
 
-mod automator;
 mod config;
 mod cookie;
 mod search;
@@ -14,7 +15,7 @@ mod cronueue;
 #[cfg(test)]
 mod tests {
     use crate::utils::write_to_file;
-    use crate::{automator, cookie};
+    use crate::{cookie};
     use std::default::Default;
     use std::fs::remove_file;
 
@@ -94,10 +95,5 @@ mod tests {
         assert_eq!(is_and_is, should_be);
 
         remove_file("./temp.json").unwrap();
-    }
-
-    #[test]
-    fn test_run() {
-        automator::automator().unwrap();
     }
 }

@@ -3,8 +3,6 @@ use rand::{self, Rng};
 use std::fs::read_to_string;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::prelude::*;
-use substring::Substring;
 use zip::write::FileOptions;
 
 pub fn write_to_file(fname: &str, message: String) -> std::io::Result<()> {

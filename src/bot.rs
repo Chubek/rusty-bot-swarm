@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::config::Config;
 use crate::cronueue::CronueueAction;
-use crate::proxy::{self, Proxy};
+use crate::proxy::Proxy;
 use thirtyfour::prelude::WebDriverResult;
 use tokio;
 

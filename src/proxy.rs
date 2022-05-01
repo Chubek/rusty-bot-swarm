@@ -1,11 +1,7 @@
 use crate::config::Config;
 use crate::utils::write_strings_to_zip;
-use serde::Serialize;
 use std::path::Path;
-use thirtyfour::support::block_on;
 use thirtyfour::{prelude::*, ChromeCapabilities};
-use thirtyfour::{ExtensionCommand, RequestMethod};
-use zip::write;
 
 lazy_static! {
     static ref MANIFEST: String = String::from(
