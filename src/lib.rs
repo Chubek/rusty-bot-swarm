@@ -11,6 +11,7 @@ mod action;
 mod proxy;
 mod bot;
 mod cronueue;
+mod record_posts;
 
 #[cfg(test)]
 mod tests {
