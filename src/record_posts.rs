@@ -1,3 +1,4 @@
+use mongodb::Database;
 use thirtyfour::prelude::*;
 use serde::{Deserialize, Serialize};
 use tokio::time::{sleep, Duration};
@@ -26,6 +27,10 @@ pub struct PostRecordScrape {
     tweet_type: TweetType,
 }
 
+trait PostInDB {
+    fn post_in_db(&self, db: Database);
+}
+
 
 impl PostRecordScrape {
     pub fn new(profile_url: String, record_mode: RecordMode, tweet_type: TweetType) -> Self {
@@ -42,22 +47,24 @@ impl PostRecordScrape {
             }, 100)
         "#;
 
+        driver.execute_script(scrolldown_script).await?;
+
         sleep(Duration::from_millis(500)).await;
         
         let mut posts = Vec::<String>::new();
 
-        let has_pinned: bool;
+        let has_pinned: usize;
 
         match driver.find_element(By::XPath("//span[text() = \"Pinned Tweet\"]")).await {
             Ok(_) => {
-                has_pinned = true;
+                has_pinned = 1;
             },
             Err(_) => {
-                has_pinned = false; 
+                has_pinned = 0; 
             },
         }
 
-        let mut href_click_text = String::new();
+        let href_click_text: String;
         let mut username = String::new();
         if let Some(un )= self.profile_url.split("/").last() {
             username = un.to_string();
@@ -93,7 +100,7 @@ impl PostRecordScrape {
         
         match self.record_mode {
             RecordMode::Last => {
-                if let Some(link) = links[0].get_attribute("href").await? {
+                if let Some(link) = links[0 + has_pinned].get_attribute("href").await? {
                     posts.push(link);
 
                 }
@@ -104,7 +111,7 @@ impl PostRecordScrape {
                 }
 
                 for i in 0..5 {
-                    if let Some(link) = links[i].get_attribute("href").await? {
+                    if let Some(link) = links[i + has_pinned].get_attribute("href").await? {
                         posts.push(link);
     
                     }
@@ -116,7 +123,7 @@ impl PostRecordScrape {
                 }
 
                 for i in 0..10 {
-                    if let Some(link) = links[i].get_attribute("href").await? {
+                    if let Some(link) = links[i + has_pinned].get_attribute("href").await? {
                         posts.push(link);
     
                     }
@@ -124,7 +131,7 @@ impl PostRecordScrape {
             },
             RecordMode::AllFound => {
                 for l in links {
-                    if let Some(link) = link.get_attribute("href").await? {
+                    if let Some(link) = l.get_attribute("href").await? {
                         posts.push(link);
                     }
                 }

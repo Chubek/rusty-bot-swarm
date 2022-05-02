@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize};
 use thirtyfour::prelude::*;
 use tokio;
 use tokio::time::{sleep, Duration};
-use mongodb::{Database, bson::{Document, doc}};
-use crate::utils::today_date_coll_name;
 
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
