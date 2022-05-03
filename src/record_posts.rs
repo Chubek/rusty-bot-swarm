@@ -1,8 +1,22 @@
 use mongodb::Database;
+use mongodb::bson::{doc, Document};
+use futures::executor::block_on;
 use thirtyfour::prelude::*;
 use serde::{Deserialize, Serialize};
 use tokio::time::{sleep, Duration};
+use crate::utils::{make_get_post_url, today_date_coll_name};
+use reqwest::blocking::get;
+use regex::Regex;
+use async_trait::async_trait;
+use std::error::Error;
+use std::fmt;
+use std::result::Result;
 
+lazy_static! {
+    static ref RE_POST: Regex = Regex::new(r#""__typename":"Tweet","rest_id":"\d+""#).unwrap();
+    static ref RE_USER_NAME: Regex = Regex::new(r#""screen_name":"([A-Za-z0-9\_]+)""#).unwrap();
+
+}
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub enum RecordMode {
@@ -20,15 +34,42 @@ pub enum TweetType {
     Likes,
 }
 
-
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct PostRecordScrape {
     profile_url: String,
     record_mode: RecordMode,
     tweet_type: TweetType,
 }
 
+#[derive(Debug)]
+struct DBInsertError {
+    details: String
+}
+
+impl fmt::Display for DBInsertError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,"{}",self.details)
+    }
+}
+
+impl Error for DBInsertError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
+
+impl DBInsertError {
+    pub fn new(details: &str) -> Box<Self> {
+        let err = DBInsertError {details: details.to_string()};
+
+        Box::from(err)
+    }
+}
+
+
+#[async_trait]
 trait PostInDB {
-    fn post_in_db(&self, db: Database);
+    async fn post_in_db(&mut self, db: Database, driver: &WebDriver) -> Result<(), Box<DBInsertError>>;
 }
 
 
@@ -141,5 +182,183 @@ impl PostRecordScrape {
 
         Ok(posts)
 
+    }
+}
+
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
+pub struct PostRecordRequest {
+    user_id: String,
+    link_id: String,
+    count: u32,
+    json: String,
+    record_mode: RecordMode,
+}
+
+impl PostRecordRequest {
+    pub fn new(user_id: String, link_id: String, count: u32, record_mode: RecordMode) -> Self {
+        PostRecordRequest { user_id, link_id, count, json: String::new(), record_mode }
+    }
+
+    pub fn get_json(&mut  self) {
+        let url = make_get_post_url(self.user_id.clone(), self.count, self.link_id.clone());
+    
+        let res = get(url).unwrap();        
+        self.json = res.text().unwrap();
+    }
+
+    pub fn get_posts(&self) -> Vec<String> {
+        let matches = RE_POST.find_iter(self.json.as_str())
+                    .into_iter()
+                    .collect::<Vec<_>>();
+
+        let json_chars = self.json.split("").collect::<Vec<_>>();
+
+        let mut rets = Vec::<String>::new();
+
+        let nth: Vec<u32>;
+
+        match self.record_mode {
+            RecordMode::Last => {
+                nth = vec![0];
+            },
+            RecordMode::LastFive => {
+                nth = (0..5).collect();
+            },
+            RecordMode::LastTen => {
+                nth = (0..10).collect();
+            },
+            RecordMode::AllFound => {
+                let matches_vec_len = matches.clone().len();
+
+                nth = (0..matches_vec_len as u32).collect();
+            },
+        }
+
+        for n in nth {
+            let mat = matches[n as usize];
+            let mut st = String::new();
+            for j in mat.start()..mat.end() {
+                st.push_str(json_chars[j]);
+            }
+
+            st = Self::extract_numbers(st);
+
+            rets.push(st);
+        }
+        
+
+        rets
+    }
+    
+    fn extract_numbers(str: String) -> String {
+        let re_num = Regex::new(r#"\d+"#).unwrap();
+
+        let mut post_num = String::new();
+
+        let found = re_num.find(str.as_str()).unwrap();
+
+        let str_split = str.split("").into_iter().collect::<Vec<_>>();
+
+        for i in found.start()..found.end() {
+            post_num.push_str(str_split[i])
+        }
+
+        post_num
+    }
+
+    fn extract_user_name(&self) -> String {
+        let mat = RE_USER_NAME.find(self.json.as_str()).unwrap();
+
+        let mut found = String::new();
+
+        let str_split = self.json.split("").collect::<Vec<_>>();
+
+        for i in mat.start()..mat.end() {   
+            found.push_str(str_split[i]);
+        }
+
+        found = found.replace("\"screen_name\"", "");
+        found = found.replace("\"", "");
+
+        found
+
+    }
+}
+
+#[async_trait]
+impl PostInDB for PostRecordScrape {
+    async fn post_in_db(&mut self, db: Database, driver: &WebDriver) -> Result<(), Box<DBInsertError>> {
+        let collection = db.collection::<Document>(
+            &today_date_coll_name());
+
+        let mut user_name = String::new();
+        
+        if let Some(user_name_str) = self.profile_url.split("/").last() {
+            user_name = user_name_str.to_string();
+        }   
+        
+
+        let posts = block_on(self.get_posts(&driver))
+                    .unwrap()
+                    .into_iter()
+                    .map(|x| {
+                        if let Some(ret) = x.split("/").last(){
+                            return doc! {"username": user_name.clone(),
+                                         "post": ret.to_owned()}
+                        } 
+                        else {
+                            panic!("Problem with url");
+                        }
+
+                        
+                    })
+                    .collect::<Vec<_>>();
+                
+        if posts.len() == 0 {
+            return Err(DBInsertError::new("Length of posts is 0"))
+        }                    
+
+        collection.insert_many(posts, None).await.unwrap();
+
+        Ok(())
+    
+    }
+}
+
+#[async_trait]
+impl PostInDB for PostRecordRequest {
+    async fn post_in_db(&mut self, db: Database, _: &WebDriver) -> Result<(), Box<DBInsertError>> {
+        self.get_json();
+
+
+        let collection = db.collection::<Document>(
+            &today_date_coll_name());
+
+        let user_name = self.extract_user_name();
+        
+        
+        let posts = self.get_posts()
+                    .into_iter()
+                    .map(|x| {
+                        if let Some(ret) = x.split("/").last(){
+                            return doc! {"username": user_name.clone(),
+                                         "post": ret.to_owned()}
+                        } 
+                        else {
+                            panic!("Problem with url");
+                        }
+
+                        
+                    })
+                    .collect::<Vec<_>>();
+        
+        if posts.len() == 0 {
+            return Err(DBInsertError::new("Length of posts is 0"))
+        }
+
+        collection.insert_many(posts, None).await.unwrap();
+
+        Ok(())
+    
     }
 }

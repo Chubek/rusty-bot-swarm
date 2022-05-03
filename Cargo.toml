@@ -17,3 +17,6 @@ lazy_static = "1"
 rand = "*"
 zip = "0.6.2"
 mongodb = "2.2.1"
+reqwest = {version = "0.11.10", features = ["blocking"]}
+regex = "1.5.5"
+async-trait = "0.1.53"
