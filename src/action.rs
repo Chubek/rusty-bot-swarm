@@ -1,11 +1,13 @@
 use crate::config::Behavior;
+use crate::record_posts::{DBInsertError, PostInDB, PostRecordRequest, PostRecordScrape};
 use crate::search::Search;
 use crate::utils::rand_num_wait;
+use mongodb::Database;
 use serde::{Deserialize, Serialize};
+use std::result::Result;
 use thirtyfour::prelude::*;
 use tokio;
 use tokio::time::{sleep, Duration};
-
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub enum PostNumber {
@@ -23,20 +25,47 @@ pub enum Action {
     QuoteRetweet(RtQuotePost),
     CommentText(TextComment),
     CommentImage(ImageComment),
+    RecordPost(PostRecorderMode),
 }
-#[derive(Serialize, Clone, Deserialize, Default, Debug, PartialEq, Eq)]
+
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
+pub enum PostRecorderMode {
+    Request(PostRecordRequest),
+    Scrape(PostRecordScrape),
+}
+
+impl PostRecorderMode {
+    pub async fn call(
+        &mut self,
+        db: &Database,
+        driver: &WebDriver,
+    ) -> Result<(), Box<DBInsertError>> {
+        match self {
+            PostRecorderMode::Request(object) => {
+                object.post_in_db(db, driver).await?;
+            }
+            PostRecorderMode::Scrape(object) => {
+                object.post_in_db(db, driver).await?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct ImagePost {
     path: String,
     text: Option<String>,
 }
 
-#[derive(Serialize, Clone, Deserialize, Default, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct TextComment {
     url: String,
     text: String,
 }
 
-#[derive(Serialize, Clone, Deserialize, Default, Debug, PartialEq, Eq)]
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct ImageComment {
     url: String,
     path: String,
@@ -57,8 +86,12 @@ pub struct RtQuotePost {
 }
 
 impl Action {
-    pub async fn call(self, driver: &WebDriver, behavior: &Behavior) -> WebDriverResult<()> {
-       
+    pub async fn call(
+        self,
+        driver: &WebDriver,
+        behavior: &Behavior,
+        db: &Database,
+    ) -> WebDriverResult<()> {
         match self.clone() {
             Action::PostText(text) => self.post_text(driver, text, behavior).await?,
             Action::PostImage(object) => {
@@ -77,6 +110,10 @@ impl Action {
             }
             Action::SearchTwitter(object) => {
                 self.search_site(driver, object, behavior).await?;
+            }
+            Action::RecordPost(object) => {
+                let mut clone_object = object.clone();
+                let _ = clone_object.call(db, driver).await.unwrap();
             }
         }
 

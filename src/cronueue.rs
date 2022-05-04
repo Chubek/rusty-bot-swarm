@@ -1,11 +1,9 @@
 use std::sync::Arc;
 
-use crate::{
-    action::Action,
-    config::Behavior,
-};
+use crate::{action::Action, config::Behavior};
 use chrono::prelude::*;
 use lazy_static::__Deref;
+use mongodb::Database;
 use serde::{Deserialize, Serialize};
 use thirtyfour::{prelude::WebDriverResult, WebDriver};
 
@@ -36,11 +34,13 @@ impl CronueueAction {
         &self,
         driver_arc: Arc<WebDriver>,
         behavior_arc: Arc<Behavior>,
+        db_arc: Arc<Database>,
     ) -> WebDriverResult<()> {
         let mut times_ran = 0u32;
 
         let driver = driver_arc.deref();
         let behavior = behavior_arc.deref();
+        let db = db_arc.deref();
 
         loop {
             let time_now = Utc::now();
@@ -48,11 +48,11 @@ impl CronueueAction {
             if time_now == self.exec_time {
                 match self.exec_type {
                     ExecType::Once => {
-                        self.action.clone().call(driver, behavior).await?;
+                        self.action.clone().call(driver, behavior, db).await?;
                         break;
                     }
                     ExecType::Multiple(num) => {
-                        self.action.clone().call(driver, behavior).await?;
+                        self.action.clone().call(driver, behavior, db).await?;
                         times_ran += 1;
 
                         if times_ran == num {
@@ -60,7 +60,7 @@ impl CronueueAction {
                         }
                     }
                     ExecType::Forever => {
-                        self.action.clone().call(driver, behavior).await?;
+                        self.action.clone().call(driver, behavior, db).await?;
                     }
                 }
             }

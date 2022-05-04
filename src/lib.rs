@@ -3,20 +3,20 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod action;
+mod bot;
 mod config;
 mod cookie;
+mod cronueue;
+mod proxy;
+mod record_posts;
 mod search;
 mod utils;
-mod action;
-mod proxy;
-mod bot;
-mod cronueue;
-mod record_posts;
 
 #[cfg(test)]
 mod tests {
+    use crate::cookie;
     use crate::utils::write_to_file;
-    use crate::{cookie};
     use std::default::Default;
     use std::fs::remove_file;
 

@@ -1,4 +1,5 @@
 use crate::cookie::Cookie;
+use mongodb::{Client, Database};
 use rand::{self, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
@@ -118,6 +119,8 @@ pub struct Config {
     pub cookies: Vec<Cookie>,
     pub behavior: Behavior,
     pub selenium_url: String,
+    pub mongodb_uri: String,
+    pub mongodb_db_name: String,
 }
 
 impl Config {
@@ -133,5 +136,14 @@ impl Config {
         Cookie::add_all_cookies(&driver, self.cookies.clone()).await?;
 
         Ok(())
+    }
+
+    pub async fn create_db(&self) -> Database {
+        let client = Client::with_uri_str(self.mongodb_uri.as_str())
+            .await
+            .unwrap();
+        let database = client.database(self.mongodb_db_name.as_str());
+
+        database
     }
 }

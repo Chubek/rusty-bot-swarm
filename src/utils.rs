@@ -5,11 +5,12 @@ use std::fs::File;
 use std::io::prelude::*;
 use zip::write::FileOptions;
 
-
 lazy_static! {
-    pub static ref REMAINDER_STR: String = String::from(r#"
+    pub static ref REMAINDER_STR: String = String::from(
+        r#"
         includePromotedContent%22%3Atrue%2C%22withQuickPromoteEligibilityTweetFields%22%3Atrue%2C%22withSuperFollowsUserFields%22%3Atrue%2C%22withDownvotePerspective%22%3Afalse%2C%22withReactionsMetadata%22%3Afalse%2C%22withReactionsPerspective%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Atrue%2C%22withVoice%22%3Atrue%2C%22withV2Timeline%22%3Atrue%2C%22__fs_responsive_web_like_by_author_enabled%22%3Afalse%2C%22__fs_dont_mention_me_view_api_enabled%22%3Atrue%2C%22__fs_interactive_text_enabled%22%3Atrue%2C%22__fs_responsive_web_uc_gql_enabled%22%3Afalse%2C%22__fs_responsive_web_edit_tweet_api_enabled%22%3Afalse%7D
-    "#);
+    "#
+    );
 }
 
 pub fn write_to_file(fname: &str, message: String) -> std::io::Result<()> {
@@ -69,10 +70,15 @@ pub fn today_date_coll_name() -> String {
     ret
 }
 
-
 pub fn make_get_post_url(id: String, count: u32, linkid: String) -> String {
-    let domain_id = format!("https://twitter.com/i/api/graphql/{}/UserTweets?variables=", linkid);
-    let params_main = format!("%7B%22userId%22%3A%{}%22%2C%22count%22%3A{}%2C%22", id, count);
+    let domain_id = format!(
+        "https://twitter.com/i/api/graphql/{}/UserTweets?variables=",
+        linkid
+    );
+    let params_main = format!(
+        "%7B%22userId%22%3A%{}%22%2C%22count%22%3A{}%2C%22",
+        id, count
+    );
 
     let fin = format!("{}{}{}", domain_id, params_main, REMAINDER_STR.clone()).to_string();
 
