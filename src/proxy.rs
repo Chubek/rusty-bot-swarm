@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::utils::write_strings_to_zip;
 use std::path::Path;
+use serde::{Serialize, Deserialize};
 use thirtyfour::{prelude::*, ChromeCapabilities};
 
 lazy_static! {
@@ -31,6 +32,7 @@ lazy_static! {
     );
 }
 
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct Proxy {
     host: String,
     username: String,

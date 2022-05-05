@@ -12,6 +12,7 @@ mod proxy;
 mod record_posts;
 mod search;
 mod utils;
+mod read_write_queue;
 
 #[cfg(test)]
 mod tests {
