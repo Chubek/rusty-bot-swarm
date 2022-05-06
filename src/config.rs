@@ -124,8 +124,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_str(s: &str) -> Self {
-        let config: Config = from_str(s).unwrap();
+    pub fn from_str(s: String) -> Self {
+        let config: Config = from_str(s.as_str()).unwrap();
 
         config
     }

@@ -2,6 +2,7 @@ use crate::config::Config;
 use crate::utils::write_strings_to_zip;
 use std::path::Path;
 use serde::{Serialize, Deserialize};
+use serde_json::from_str;
 use thirtyfour::{prelude::*, ChromeCapabilities};
 
 lazy_static! {
@@ -46,6 +47,12 @@ impl Proxy {
             username,
             password,
         }
+    }
+
+    pub fn from_str(str_create: String) -> Self {
+        let ret: Proxy = from_str(str_create.as_str()).unwrap();
+
+        ret
     }
 
     fn create_ext(&self) {

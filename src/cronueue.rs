@@ -1,12 +1,12 @@
-use std::sync::{Arc, Mutex};
 use crate::{action::Action, config::Behavior};
 use chrono::prelude::*;
+use crossbeam_channel::Receiver;
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
-use thirtyfour::{prelude::WebDriverResult, WebDriver};
-use std::thread;
+use std::mem::drop;
 use std::time::Duration;
-use crossbeam_channel::{Receiver};
+use thirtyfour::{prelude::WebDriverResult, WebDriver};
+use tokio::{sync::Mutex, time::sleep};
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub enum ExecType {
@@ -33,53 +33,71 @@ impl CronueueAction {
 
     pub async fn run_queue(
         &self,
-        driver_arc_mutex: Arc<Mutex<&WebDriver>>,
-        behavior_arc_mutex: Arc<Mutex<&Behavior>>,
-        db_arc_mutex: Arc<Mutex<&Database>>,
-        receiver_arc_mutex: Arc<Mutex<&Receiver<u32>>>
+        driver_arc_mutex: Mutex<WebDriver>,
+        behavior_arc_mutex: Mutex<Behavior>,
+        db_arc_mutex: Mutex<Database>,
+        receiver: &Receiver<u32>,
     ) -> WebDriverResult<()> {
         let mut times_ran = 0u32;
-
-        let driver = *driver_arc_mutex.lock().unwrap();
-        let behavior = *behavior_arc_mutex.lock().unwrap();
-        let db = *db_arc_mutex.lock().unwrap();
-        let receiver = *receiver_arc_mutex.lock().unwrap();
 
         loop {
             match receiver.recv() {
                 Ok(u32_sent) => {
                     if u32_sent == 0 {
                         break;
-                    }
-                    else {
-                        thread::sleep(Duration::from_millis(u32_sent.into()));
+                    } else {
+                        sleep(Duration::from_millis(u32_sent.into())).await;
                     }
                 }
-                Err(_) => panic!("Problem with sent data")
+                Err(_) => panic!("Bad cross-thread message"),
             }
-
 
             let time_now = Utc::now();
 
             if time_now == self.exec_time {
                 match self.exec_type {
                     ExecType::Once => {
-                        self.action.clone().call(driver, behavior, db).await?;
+                        let driver = driver_arc_mutex.lock().await;
+                        let behavior = behavior_arc_mutex.lock().await;
+                        let db = db_arc_mutex.lock().await;
+
+                        self.action.clone().call(&driver, &behavior, &db).await?;
+
+                        drop(driver);
+                        drop(behavior);
+                        drop(db);
+
                         break;
                     }
                     ExecType::Multiple(num) => {
-                        self.action.clone().call(driver, behavior, db).await?;
+                        let driver = driver_arc_mutex.lock().await;
+                        let behavior = behavior_arc_mutex.lock().await;
+                        let db = db_arc_mutex.lock().await;
+
+                        self.action.clone().call(&driver, &behavior, &db).await?;
                         times_ran += 1;
+
+                        drop(driver);
+                        drop(behavior);
+                        drop(db);
 
                         if times_ran == num {
                             break;
                         }
                     }
                     ExecType::Forever => {
-                        self.action.clone().call(driver, behavior, db).await?;
+                        let driver = driver_arc_mutex.lock().await;
+                        let behavior = behavior_arc_mutex.lock().await;
+                        let db = db_arc_mutex.lock().await;
+
+                        self.action.clone().call(&driver, &behavior, &db).await?;
+
+                        drop(driver);
+                        drop(behavior);
+                        drop(db);
                     }
                 }
-            }            
+            }
         }
 
         Ok(())
