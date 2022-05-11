@@ -2,8 +2,11 @@ use crate::config::Behavior;
 use crate::record_posts::{DBInsertError, PostInDB, PostRecordRequest, PostRecordScrape};
 use crate::search::Search;
 use crate::utils::rand_num_wait;
+use futures::executor::block_on;
 use mongodb::Database;
 use serde::{Deserialize, Serialize};
+use serde_json::from_str;
+use std::collections::HashSet;
 use std::result::Result;
 use thirtyfour::prelude::*;
 use tokio;
@@ -17,7 +20,7 @@ pub enum PostNumber {
 }
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub enum Action {
-    PostText(String),
+    PostText(TextPost),
     PostImage(ImagePost),
     LikePost(PostRetweetLike),
     SearchTwitter(Search),
@@ -53,16 +56,50 @@ impl PostRecorderMode {
     }
 }
 
+pub trait FromText {
+    fn from_text(txt: String) -> Self;
+}
+
+#[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
+pub struct TextPost {
+    url: String,
+    content: String,
+}
+
+impl FromText for TextPost {
+    fn from_text(txt: String) -> Self {
+        let s: TextPost = from_str(txt.as_str()).unwrap();
+
+        s
+    }
+}
+
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct ImagePost {
     path: String,
     text: Option<String>,
 }
 
+impl FromText for ImagePost {
+    fn from_text(txt: String) -> Self {
+        let s: ImagePost = from_str(txt.as_str()).unwrap();
+
+        s
+    }
+}
+
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct TextComment {
     url: String,
     text: String,
+}
+
+impl FromText for TextComment {
+    fn from_text(txt: String) -> Self {
+        let s: TextComment = from_str(txt.as_str()).unwrap();
+
+        s
+    }
 }
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
@@ -72,11 +109,29 @@ pub struct ImageComment {
     text: Option<String>,
 }
 
+impl FromText for ImageComment  {
+    fn from_text(txt: String) -> Self {
+        let s: ImageComment  = from_str(txt.as_str()).unwrap();
+
+        s
+    }
+}
+
+
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct PostRetweetLike {
     url: String,
     number: PostNumber,
 }
+
+impl FromText for PostRetweetLike  {
+    fn from_text(txt: String) -> Self {
+        let s: PostRetweetLike  = from_str(txt.as_str()).unwrap();
+
+        s
+    }
+}
+
 
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct RtQuotePost {
@@ -84,6 +139,15 @@ pub struct RtQuotePost {
     number: PostNumber,
     text: Option<String>,
 }
+
+impl FromText for RtQuotePost  {
+    fn from_text(txt: String) -> Self {
+        let s: RtQuotePost  = from_str(txt.as_str()).unwrap();
+
+        s
+    }
+}
+
 
 impl Action {
     pub async fn call(
@@ -93,7 +157,7 @@ impl Action {
         db: &Database,
     ) -> WebDriverResult<()> {
         match self.clone() {
-            Action::PostText(text) => self.post_text(driver, text, behavior).await?,
+            Action::PostText(object) => self.post_text(driver, object, behavior).await?,
             Action::PostImage(object) => {
                 self.post_image(driver, object, behavior).await?;
             }
@@ -123,14 +187,16 @@ impl Action {
     pub async fn post_text(
         &self,
         driver: &WebDriver,
-        text: String,
+        object: TextPost,
         behavior: &Behavior,
     ) -> WebDriverResult<()> {
+        driver.get(object.url).await?;
+
         let elem_ta = driver
             .find_element(By::XPath("//*[@data-testid = \"tweetTextarea_0\"]"))
             .await?;
 
-        let chars = text.chars();
+        let chars = object.content.chars();
 
         for char in chars {
             elem_ta.send_keys(char).await?;
@@ -418,32 +484,64 @@ impl Action {
 
         sleep(Duration::from_millis(behavior.run_erratic_wait().into())).await;
 
-        driver
+        let mut hrefs = HashSet::<String>::new();
+
+        loop {
+            driver
             .execute_script(
                 r#"
-        setInterval(() => {
-            window.scroll(0, Math.random() * window.innerHeight);
-        }, 100)
-    
-    "#,
+                var elSignUp = $x("//a[contains(@href, 'signup')]");
+                let added = [];
+                
+                setInterval(() => {
+                    window.scroll(0, elSignUp[0].getBoundingClientRect().top + window.scrollY * 2);
+                
+                    let links_snapshot = document.evaluate("//a[contains(@href, 'status')]", document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+                
+                
+                
+                    for (var i = 0; i < links_snapshot.snapshotLength; i++) {
+                        var node = links_snapshot.snapshotItem(i);
+                
+                
+                
+                        if (!added.includes(node.href)) {
+                            let pEl = document.createElement('a');
+                            pEl.setAttribute("id", `${i}-hrefStatus`)
+                            pEl.setAttribute('href', node.href);
+                            document.getElementsByTagName('body')[0].appendChild(pEl);
+                
+                            added.push(node.href);
+                
+                        }
+                
+                
+                
+                    }
+                
+                }, Math.random() * (5000 - 3000) + 3000)
+                "#,
             )
             .await?;
 
-        sleep(Duration::from_millis(15000)).await;
+            sleep(Duration::from_millis(1000)).await;
 
-        let post_urls = driver
-            .find_elements(By::XPath("//a[contains(@href, \"status\")]"))
-            .await?;
+            driver
+                .find_elements(By::XPath("//a[contains(@id, 'hrefStatus')]"))
+                .await?
+                .iter()
+                .for_each(|x| {
+                    if let Some(href) = block_on(x.get_attribute("href")).unwrap() {
+                        hrefs.insert(href);
+                    }
+                });
 
-        let mut urls = Vec::<String>::new();
-
-        for post_url in post_urls {
-            let url_option = post_url.get_attribute("href").await?;
-
-            if let Some(url) = url_option {
-                urls.push(url);
+            if hrefs.len() == 100 {
+                break;
             }
         }
+
+        let urls: Vec<_> = hrefs.into_iter().collect();
 
         Ok(urls)
     }

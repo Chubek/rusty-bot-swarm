@@ -6,6 +6,7 @@ use mongodb::Database;
 use regex::Regex;
 use reqwest::header::*;
 use serde::{Deserialize, Serialize};
+use serde_json::from_str;
 use std::error::Error;
 use std::fmt;
 use std::result::Result;
@@ -206,6 +207,14 @@ pub struct SearchHeader {
     user_agent: String,
 }
 
+impl SearchHeader {
+    pub fn from_json_str(json_str: String) -> Self {
+        let ret: SearchHeader = from_str(json_str.as_str()).unwrap();
+
+        ret
+    }
+}
+
 #[derive(Serialize, Clone, Deserialize, Debug, PartialEq, Eq)]
 pub struct PostRecordRequest {
     user_id: String,
@@ -214,7 +223,7 @@ pub struct PostRecordRequest {
     json: String,
     record_mode: RecordMode,
     search_header: SearchHeader,
-}
+} 
 
 impl PostRecordRequest {
     pub fn new(

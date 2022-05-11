@@ -6,7 +6,8 @@ use thirtyfour::WebDriver;
 use tokio;
 use crate::read_write_queue::ReadWriteQueue;
 use tokio::sync::Mutex;
-
+use crate::action::*;
+use crate::search::Search;
 pub struct Bot {
     name: String,
     queue: ReadWriteQueue,
@@ -48,5 +49,73 @@ impl Bot {
         }
     }
 
+    pub fn create_post_action(&self, json: String) -> Action {
+        let post_post = TextPost::from_text(json);
 
+        let action = Action::PostText(post_post);
+
+        action
+    }
+
+    pub fn create_image_action(&self, json: String) -> Action {
+        let post_post = ImagePost::from_text(json);
+
+        let action = Action::PostImage(post_post);
+
+        action
+    }
+
+
+    pub fn create_like_action(&self, json: String) -> Action {
+        let post_post = PostRetweetLike::from_text(json);
+
+        let action = Action::LikePost(post_post);
+
+        action
+    }
+
+    pub fn create_search_action(&self, json: String) -> Action {
+        let post_post = Search::from_json_string(json);
+
+        let action = Action::SearchTwitter(post_post);
+
+        action
+    }
+
+
+    pub fn create_rt_action(&self, json: String) -> Action {
+        let post_post = PostRetweetLike::from_text(json);
+
+        let action = Action::Retweet(post_post);
+
+        action
+    }
+
+
+    pub fn create_qrt_action(&self, json: String) -> Action {
+        let post_post = RtQuotePost::from_text(json);
+
+        let action = Action::QuoteRetweet(post_post);
+
+        action
+    }
+
+
+    pub fn create_ctext_action(&self, json: String) -> Action {
+        let post_post = TextComment::from_text(json);
+
+        let action = Action::CommentText(post_post);
+
+        action
+    }
+
+
+
+    pub fn create_cimage_action(&self, json: String) -> Action {
+        let post_post = ImageComment::from_text(json);
+
+        let action = Action::CommentImage(post_post);
+
+        action
+    }
 }
